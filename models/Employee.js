@@ -105,6 +105,11 @@ const employeeSchema = new mongoose.Schema(
       remarks: { type: String },
     },
      isActive: { type: Boolean, default: true },
+     leaveBalances: {
+        earned: { type: Number, default: 0, min: 0 },
+        sick: { type: Number, default: 0, min: 0 },
+        casual: { type: Number, default: 0, min: 0 },
+    },
   },
   {
     timestamps: true,

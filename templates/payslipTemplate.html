@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payslip</title>
+    <style>
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 10px; margin: 40px; color: #333; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .company-logo { max-width: 150px; max-height: 70px; margin-bottom: 10px; } /* Adjust size */
+        .company-name { font-size: 16px; font-weight: bold; }
+        .company-address { font-size: 9px; color: #555; }
+        .payslip-title { font-size: 12px; font-weight: bold; margin-top: 5px; }
+        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; border: 1px solid #eee; padding: 10px; border-radius: 4px; margin-bottom: 15px; background-color: #f9f9f9;}
+        .details-grid div { margin-bottom: 3px; }
+        .details-grid span { font-weight: bold; color: #555; display: inline-block; min-width: 100px; } /* Label styling */
+        .section-title { font-size: 11px; font-weight: bold; margin: 15px 0 5px 0; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+        .money-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+        .money-table { width: 100%; border-collapse: collapse; }
+        .money-table th, .money-table td { text-align: left; padding: 4px; border-bottom: 1px solid #eee; }
+        .money-table th { font-weight: bold; background-color: #f0f0f0; font-size: 9px; text-transform: uppercase;}
+        .money-table td:last-child { text-align: right; }
+        .total-row td { font-weight: bold; border-top: 1px solid #aaa; border-bottom: none;}
+        .net-pay-section { margin-top: 20px; padding-top: 10px; border-top: 1px solid #aaa; text-align: center; }
+        .net-pay-label { font-size: 11px; font-weight: bold; color: #555; }
+        .net-pay-amount { font-size: 16px; font-weight: bold; color: #27ae60; margin-top: 5px; }
+        .footer-note { font-size: 8px; color: #888; text-align: center; margin-top: 30px; }
+
+         /* Helper for number formatting (can use JS instead if needed) */
+         .amount::before { content: '₹ '; } /* Add Rupee symbol */
+         .amount { font-family: monospace; } /* Align numbers nicely */
+    </style>
+</head>
+<body>
+    <div class="header">
+        {{{companyLogoHtml}}}
+        <div class="company-name">{{companyName}}</div>
+        <div class="company-address">{{companyAddress}}</div>
+        <div class="payslip-title">Payslip for {{monthYear}}</div>
+    </div>
+
+    <div class="details-grid">
+        <div><span>Employee Name:</span> {{employeeName}}</div>
+        <div><span>Employee ID:</span> {{employeeId}}</div>
+        <div><span>Designation:</span> {{designation}}</div>
+        <div><span>Department:</span> {{department}}</div>
+        <div><span>PAN:</span> {{panNumber}}</div>
+        <div><span>Bank Account:</span> {{bankAccountNo}}</div>
+         </div>
+
+    <div class="money-grid">
+        <div>
+            <div class="section-title">Earnings</div>
+            <table class="money-table">
+                <thead><tr><th>Description</th><th>Amount</th></tr></thead>
+                <tbody>
+                    <tr><td>Basic</td><td class="amount">{{basic}}</td></tr>
+                    <tr><td>HRA</td><td class="amount">{{hra}}</td></tr>
+                    <tr><td>Medical Allowance</td><td class="amount">{{medicalAllowance}}</td></tr>
+                    <tr><td>Special Allowance</td><td class="amount">{{specialAllowance}}</td></tr>
+                    <tr class="total-row"><td>Total Earnings</td><td class="amount">{{totalEarnings}}</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <div class="section-title">Deductions</div>
+             <table class="money-table">
+                 <thead><tr><th>Description</th><th>Amount</th></tr></thead>
+                 <tbody>
+                    <tr><td>Professional Tax</td><td class="amount">{{professionalTax}}</td></tr>
+                    <tr class="total-row"><td>Total Deductions</td><td class="amount">{{totalDeductions}}</td></tr>
+                 </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="net-pay-section">
+        <div class="net-pay-label">Net Pay</div>
+        <div class="net-pay-amount amount">{{netPay}}</div>
+         <div style="font-size: 9px; margin-top: 5px;">({{netPayInWords}})</div>
+    </div>
+
+    <div class="footer-note">
+        Generated on: {{generatedDate}} | {{releaseStatus}} <br/>
+        This is a system generated payslip and does not require signature.
+    </div>
+
+</body>
+</html>

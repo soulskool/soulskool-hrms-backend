@@ -6,6 +6,8 @@ import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js';
 import adminRoutes from './routes/adminRoutes.js';
 import Admin from './models/Admin.js';
+import employeeRoutes from './routes/employeeRoutes.js';
+import morgan from 'morgan';
 
 dotenv.config();
 
@@ -15,7 +17,7 @@ connectDB();
 
 
 const app = express();
-
+app.use(morgan('dev')); 
 // Middleware
 app.use(cors({
     origin: 'http://localhost:3000', // Replace with your frontend URL
@@ -29,12 +31,11 @@ app.use(cookieParser());
 
 
 
-
 const createFirstAdmin = async () => {
   await connectDB();
 
   try {
-    const adminExists = await Admin.findOne({ email: 'admin@company.com' });
+    const adminExists = await Admin.findOne({ email: 'admin@ss.com' });
 
     if (adminExists) {
       console.log('Admin already exists.');
@@ -43,8 +44,8 @@ const createFirstAdmin = async () => {
 
     const admin = new Admin({
       name: 'Main Admin',
-      email: 'admin@company.com',
-      password: 'StrongPassword123', // Change this!
+      email: 'admin@ss.com',
+      password: 'password123', // Change this!
     });
 
     await admin.save();
@@ -68,7 +69,8 @@ const createFirstAdmin = async () => {
 
 // Routes
 app.use('/api/admin', adminRoutes);
-// You can add employee routes later: app.use('/api/employee', employeeRoutes);
+app.use('/api/employee', employeeRoutes);
+
 
 app.get('/', (req, res) => {
   res.send('HR Portal API is running...');

@@ -19,10 +19,14 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
+    "moment-timezone": "^0.6.0",
     "mongodb": "^6.20.0",
     "mongoose": "^8.19.1",
+    "morgan": "^1.10.1",
     "multer": "^2.0.2",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "number-to-words": "^1.2.4",
+    "puppeteer": "^24.26.1"
   },
   "devDependencies": {
     "@types/node": "^24.8.0"
