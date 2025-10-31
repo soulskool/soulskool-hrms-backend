@@ -2,6 +2,8 @@ import Task from '../../models/Task.js';
 import Employee from '../../models/Employee.js'; // Needed for assigning tasks
 import Admin from '../../models/Admin.js'; // Needed for creator info
 import mongoose from 'mongoose';
+import * as XLSX from 'xlsx';
+import moment from 'moment-timezone';
 
 // @desc    Admin creates a task and assigns it to an employee
 // @route   POST /api/admin/tasks
@@ -210,10 +212,123 @@ const adminDeleteTask = async (req, res) => {
 };
 
 
+
+const ist = (d) => moment(d).tz('Asia/Kolkata');
+const getMonthBoundsIST = (year, month1to12) => {
+  const m0 = month1to12 - 1;
+  const start = moment.tz({ year, month: m0, day: 1, hour: 0, minute: 0, second: 0, millisecond: 0 }, 'Asia/Kolkata');
+  const end = start.clone().endOf('month');
+  return { start: start.toDate(), end: end.toDate() };
+};
+
+ const exportMonthlyTasksExcel = async (req, res) => {
+  try {
+    const year = parseInt(req.query.year, 10);
+    const month = parseInt(req.query.month, 10); // 1..12
+
+    if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+      return res.status(400).json({ message: 'Provide valid year and month (1-12).' });
+    }
+
+    // Active employees for optional filtering/join
+    const employees = await Employee.find({ isActive: true })
+      .select('employeeInfo.name employeeInfo.employeeId')
+      .lean();
+    const empIndexById = new Map(employees.map(e => [String(e._id), e]));
+    const activeIds = new Set(employees.map(e => String(e._id)));
+
+    // Use createdAt within month window (change to dueDate window if needed)
+    const { start, end } = getMonthBoundsIST(year, month);
+
+    // IMPORTANT: match your schema field names:
+    // assigneeObjectId stores the Employee ObjectId (string) in your examples.
+    const tasks = await Task.find({
+      // Limit to tasks assigned to active employees (optional but typical)
+      assigneeObjectId: { $in: Array.from(activeIds) },
+      createdAt: { $gte: start, $lte: end },
+    })
+      .select('taskName description assigneeObjectId assigneeEmployeeId assigneeName priority dueDate status completedAt createdAt')
+      .lean();
+
+    // Header
+    const header = [
+      'Employee ID',
+      'Employee Name',
+      'Task Name',
+      'Task Description',
+      'Due Date',
+      'Completed Date',
+      'Completion Status',
+      'Task Creation Date',
+      'Priority',
+    ];
+
+    // Rows
+    const rows = tasks.map(t => {
+      // Prefer live Employee doc for name/id if present; else fall back to snapshot on Task
+      const empDoc = empIndexById.get(String(t.assigneeObjectId));
+      const employeeId = empDoc?.employeeInfo?.employeeId || t.assigneeEmployeeId || '';
+      const employeeName = empDoc?.employeeInfo?.name || t.assigneeName || '';
+
+      const due = t.dueDate ? ist(t.dueDate).format('YYYY-MM-DD HH:mm') : '';
+      const completed = t.completedAt ? ist(t.completedAt).format('YYYY-MM-DD HH:mm') : '';
+      const created = t.createdAt ? ist(t.createdAt).format('YYYY-MM-DD HH:mm') : '';
+      const completionStatus = t.status ? String(t.status) : (t.completedAt ? 'Completed' : 'Pending');
+
+      return [
+        employeeId,
+        employeeName,
+        t.taskName || '',
+        t.description || '',
+        due,
+        completed,
+        completionStatus,
+        created,
+        t.priority || '',
+      ];
+    });
+
+    // Build XLSX
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    ws['!cols'] = [
+      { wch: 14 }, // Employee ID
+      { wch: 24 }, // Employee Name
+      { wch: 30 }, // Task Name
+      { wch: 60 }, // Description
+      { wch: 20 }, // Due
+      { wch: 20 }, // Completed
+      { wch: 16 }, // Status
+      { wch: 20 }, // Created
+      { wch: 10 }, // Priority
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const sheetName = `Tasks_${year}-${String(month).padStart(2, '0')}`;
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+    const filename = `${sheetName}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+    return res.send(wbout);
+  } catch (err) {
+    console.error('Export monthly tasks failed:', err);
+    return res.status(500).json({ message: 'Failed to export tasks.' });
+  }
+};
+
+
+
+
+
+
+
 export {
     adminCreateTask,
     adminGetAllTasks,
     adminUpdateTask,
     adminUpdateTaskStatus,
     adminDeleteTask,
+    exportMonthlyTasksExcel,
 };

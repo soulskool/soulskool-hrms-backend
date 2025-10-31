@@ -17,14 +17,16 @@ import { protectAdmin } from '../middleware/authMiddleware.js';
 import { upload } from '../utils/bunnyCdn.js';
 import {
     getTodayAttendanceOverview,
-    getPastAttendanceRecords
+    getPastAttendanceRecords,
+    exportMonthlyAttendanceExcel
 } from '../controllers/admin/attendanceController.js';
 
 import {
     getPendingLeaveRequests,
     updateLeaveRequestStatus,
     getAllLeaveBalances,
-    updateEmployeeLeaveBalance
+    updateEmployeeLeaveBalance,
+    getApprovedLeaveHistory,
 } from '../controllers/admin/leaveController.js';
 
 import {
@@ -33,6 +35,7 @@ import {
     adminUpdateTask,
     adminUpdateTaskStatus,
     adminDeleteTask,
+    exportMonthlyTasksExcel,
 } from '../controllers/admin/taskController.js';
 
 
@@ -51,6 +54,8 @@ import { // Payslip Controller Imports
     releasePayslip,
     deletePayslip,
     downloadPayslip,
+    exportMonthlyPayslipStatement,
+    getMonthlyPayslipStatement,
 } from '../controllers/admin/payslipController.js';
 
 
@@ -83,7 +88,8 @@ router.get('/attendance/history', protectAdmin, getPastAttendanceRecords);
 
 // --- Leave Management Routes (Admin) ---
 router.get('/leave/pending', protectAdmin, getPendingLeaveRequests);
-router.put('/leave/requests/:requestId', protectAdmin, updateLeaveRequestStatus); // Approve/Reject
+router.put('/leave/requests/:requestId', protectAdmin, updateLeaveRequestStatus); 
+router.get('/leave/approved', protectAdmin, getApprovedLeaveHistory);
 router.get('/leave/balances', protectAdmin, getAllLeaveBalances);
 router.put('/leave/balances/:employeeId', protectAdmin, updateEmployeeLeaveBalance); // Update specific employee balance
 
@@ -93,7 +99,7 @@ router.get('/tasks', protectAdmin, adminGetAllTasks);           // Get all tasks
 router.put('/tasks/:taskId', protectAdmin, adminUpdateTask);       // Update any task
 router.patch('/tasks/:taskId/status', protectAdmin, adminUpdateTaskStatus); // Mark any task complete/reopen
 router.delete('/tasks/:taskId', protectAdmin, adminDeleteTask);
-
+router.get('/tasks/export', protectAdmin, exportMonthlyTasksExcel);
 
 
 // --- Salary Management (Admin) ---
@@ -103,6 +109,9 @@ router.get('/salaries/employee/:employeeId', protectAdmin, getSalaryByEmployeeId
 router.put('/salaries/:salaryId', protectAdmin, updateSalary);
 router.delete('/salaries/:salaryId', protectAdmin, deleteSalary);
 
+
+
+
 // --- Payslip Management (Admin) ---
 router.post('/payslips/generate', protectAdmin, generatePayslip);
 router.get('/payslips', protectAdmin, getPayslips); // List payslips (admin view)
@@ -110,5 +119,11 @@ router.get('/payslips/:payslipId', protectAdmin, getPayslipById); // Get specifi
 router.patch('/payslips/:payslipId/release', protectAdmin, releasePayslip); // Mark as released
 router.delete('/payslips/:payslipId', protectAdmin, deletePayslip);
 router.get('/payslips/:payslipId/download', protectAdmin, downloadPayslip);
+
+router.get('/payslips/statement/data', protectAdmin, getMonthlyPayslipStatement);
+router.get('/payslips/statement/export', protectAdmin, exportMonthlyPayslipStatement);
+
+
+router.get('/attendance/export', protectAdmin, exportMonthlyAttendanceExcel);
 
 export default router;

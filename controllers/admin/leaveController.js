@@ -247,9 +247,45 @@ const updateEmployeeLeaveBalance = async (req, res) => {
 };
 
 
+const getApprovedLeaveHistory = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    try {
+        const query = { status: 'Approved' }; // Only approved requests
+
+        // Fetch requests for the current page
+        const requests = await LeaveRequest.find(query)
+            .populate('employee', 'employeeInfo.name employeeInfo.employeeId') // Populate basic employee info
+            .sort({ actionTakenAt: 'desc', createdAt: 'desc' }) // Sort by approval date, newest first
+            .skip(skip)
+            .limit(limit);
+
+        // Get total count for pagination info
+        const totalRequests = await LeaveRequest.countDocuments(query);
+        
+        res.json({
+            requests,
+            currentPage: page,
+            totalPages: Math.ceil(totalRequests / limit),
+            totalRequests,
+        });
+
+    } catch (error) {
+        console.error("Error fetching approved leave history:", error);
+        res.status(500).json({ message: 'Server error fetching approved leave history.' });
+    }
+};
+
+
+
+
+
 export {
     getPendingLeaveRequests,
     updateLeaveRequestStatus,
     getAllLeaveBalances,
     updateEmployeeLeaveBalance,
+    getApprovedLeaveHistory,
 };

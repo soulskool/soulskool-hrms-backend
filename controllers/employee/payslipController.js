@@ -34,6 +34,7 @@ const downloadMyPayslip = async (req, res) => {
             isReleased: true, // Crucial check
          });
 
+
         if (!payslip) {
             return res.status(404).json({ message: 'Payslip not found or not yet released.' });
         }
@@ -45,11 +46,12 @@ const downloadMyPayslip = async (req, res) => {
 
         // 2. Prepare Data
          // TODO: Get Company Details
-        const companyDetails = {
-            companyName: "Your Company Name",
-            companyAddress: "Your Company Address",
-            companyLogoHtml: '<img src="YOUR_LOGO_URL_OR_BASE64" alt="Company Logo" class="company-logo">',
-        };
+           const companyDetails = {
+  companyName: "Soul Skool",
+  companyAddress: "Flat No 301, TVH Vista Heights, Tower 6, Trichy Rd, Kallimadai, Coimbatore, Tamil Nadu 641005",
+  companyLogoHtml: '<img src="https://lms-anyonecandance.b-cdn.net/public%20data%20lobo/soulskool.png" alt="Company Logo" class="company-logo" />',
+};
+
          const netPayInWords = toWords(Math.floor(payslip.netPay || 0)).replace(/,/g, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) + ' Only';
         const templateData = {
             ...companyDetails,
@@ -59,7 +61,7 @@ const downloadMyPayslip = async (req, res) => {
             designation: payslip.employeeSnapshot.designation || '-',
             department: payslip.employeeSnapshot.department || '-',
             panNumber: payslip.employeeSnapshot.panNumber || '-',
-            bankAccountNo: payslip.employeeSnapshot.bankDetails?.accountNumber ? `****${payslip.employeeSnapshot.bankDetails.accountNumber.slice(-4)}` : '-',
+            bankAccountNo: payslip.employeeSnapshot.bankDetails?.accountNumber ? payslip.employeeSnapshot.bankDetails.accountNumber : '-',
             basic: formatCurrencyForTemplate(payslip.earnings.basic),
             hra: formatCurrencyForTemplate(payslip.earnings.hra),
             medicalAllowance: formatCurrencyForTemplate(payslip.earnings.medicalAllowance),
@@ -74,14 +76,27 @@ const downloadMyPayslip = async (req, res) => {
         };
 
         // 3. Replace Placeholders
-        for (const key in templateData) {
-           if (key === 'companyLogoHtml') {
-                 htmlContent = htmlContent.replace(`{{{${key}}}}`, templateData[key]);
-            } else {
-                const regex = new RegExp(`{{${key}}}`, 'g');
-                htmlContent = htmlContent.replace(regex, templateData[key]);
-            }
-        }
+        // for (const key in templateData) {
+        //    if (key === 'companyLogoHtml') {
+        //          htmlContent = htmlContent.replace(`{{{${key}}}}`, templateData[key]);
+        //     } else {
+        //         const regex = new RegExp(`{{${key}}}`, 'g');
+        //         htmlContent = htmlContent.replace(regex, templateData[key]);
+        //     }
+        // }
+          
+        
+        htmlContent = htmlContent.replace(/\{\{\{\s*companyLogoHtml\s*\}\}\}/g, companyDetails.companyLogoHtml);
+
+// 2) Replace the simple text placeholders
+for (const [key, val] of Object.entries(templateData)) {
+  if (key === 'companyLogoHtml') continue;
+  const safeVal = String(val ?? '');
+  const re = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
+  htmlContent = htmlContent.replace(re, safeVal);
+}
+
+
 
         // 4. Generate PDF with Puppeteer
         const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox']});

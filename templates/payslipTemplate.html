@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -85,5 +85,443 @@
         This is a system generated payslip and does not require signature.
     </div>
 
+</body>
+</html> -->
+
+
+
+
+<!-- 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payslip</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px; /* Slightly increased base font size */
+            margin: 30px;
+            color: #333;
+        }
+        .header-container {
+            display: flex; /* Use flexbox */
+            align-items: center; /* Vertically align items */
+            margin-bottom: 25px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+        .logo-container {
+            flex: 0 0 150px; /* Assign fixed width for logo area */
+            margin-right: 20px; /* Space between logo and company info */
+            display: flex; /* Center image within container if needed */
+            align-items: center;
+        }
+        .company-logo {
+            max-width: 100%; /* Make logo responsive within its container */
+            max-height: 60px; /* Adjust max height as needed */
+            display: block; /* Remove extra space below image */
+        }
+        .company-info {
+            flex-grow: 1; /* Take remaining space */
+            text-align: center; /* Center the text */
+        }
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        .company-address {
+            font-size: 10px;
+            color: #555;
+            line-height: 1.4;
+        }
+        .payslip-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 8px;
+            text-align: center; /* Title centered below address */
+        }
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px 25px;
+            margin-bottom: 20px;
+            font-size: 10.5px;
+        }
+        .details-grid div { padding-bottom: 3px; }
+        .details-grid span { font-weight: bold; color: #555; display: inline-block; min-width: 90px; margin-right: 5px; }
+
+        /* Grid for Earnings and Deductions */
+        .earnings-deductions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Two equal columns */
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+        .money-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10.5px;
+        }
+        .money-table th { /* General header style */
+            text-align: left;
+            padding: 5px 8px;
+            font-weight: bold;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #ccc;
+            text-transform: uppercase;
+            font-size: 9.5px;
+        }
+         .money-table th.amount-header { /* Specific style for Amount header */
+            text-align: right;
+         }
+        .money-table td {
+            text-align: left;
+            padding: 5px 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .money-table td.amount { /* Style for amount values */
+            text-align: right;
+            font-family: monospace;
+        }
+        .money-table .total-row td { /* Style for total rows */
+            font-weight: bold;
+            border-top: 1px solid #aaa;
+            border-bottom: none;
+            padding-top: 6px;
+        }
+        .net-pay-section { margin-top: 25px; padding-top: 15px; border-top: 1px solid #aaa; text-align: center; }
+        .net-pay-label { font-size: 12px; font-weight: bold; color: #555; }
+        .net-pay-amount { font-size: 18px; font-weight: bold; color: #333; margin-top: 5px; font-family: monospace; }
+        .amount-in-words { font-size: 10px; margin-top: 5px; color: #666; font-style: italic; }
+        .footer-note { font-size: 9px; color: #888; text-align: center; margin-top: 35px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <div class="logo-container">
+            {{{companyLogoHtml}}} </div>
+        <div class="company-info">
+            <div class="company-name">{{companyName}}</div>
+            <div class="company-address">{{companyAddress}}</div>
+            <div class="payslip-title">Payslip for {{monthYear}}</div>
+        </div>
+    </div>
+
+    <div class="details-grid">
+        <div><span>Employee Name:</span> {{employeeName}}</div>
+        <div><span>Employee No:</span> {{employeeId}}</div>
+        <div><span>Designation:</span> {{designation}}</div>
+        <div><span>PAN Number:</span> {{panNumber}}</div>
+        <div><span>Department:</span> {{department}}</div>
+        <div><span>Bank Account No:</span> {{bankAccountNo}}</div>
+        </div>
+
+    <div class="earnings-deductions-grid">
+        <div>
+            <table class="money-table">
+                <thead>
+                    <tr>
+                        <th>Earnings</th>
+                        <th class="amount-header">Amount (₹)</th> </tr>
+                </thead>
+                <tbody>
+                    <tr><td>BASIC</td><td class="amount">{{basic}}</td></tr>
+                    <tr><td>HRA</td><td class="amount">{{hra}}</td></tr>
+                    <tr><td>MEDICAL ALLOWANCE</td><td class="amount">{{medicalAllowance}}</td></tr>
+                    <tr><td>SPECIAL ALLOWANCE</td><td class="amount">{{specialAllowance}}</td></tr>
+                    <tr class="total-row"><td>Total Earnings</td><td class="amount">{{totalEarnings}}</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <table class="money-table">
+                 <thead>
+                    <tr>
+                        <th>Deductions</th>
+                        <th class="amount-header">Amount (₹)</th> </tr>
+                 </thead>
+                 <tbody>
+                    <tr><td>PROF TAX</td><td class="amount">{{professionalTax}}</td></tr>
+                    <tr class="total-row"><td>Total Deductions</td><td class="amount">{{totalDeductions}}</td></tr>
+                 </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="net-pay-section">
+        <div class="net-pay-label">Net Pay for the Month</div>
+        <div class="net-pay-amount">{{netPay}}</div>
+         <div class="amount-in-words">(Rupees {{netPayInWords}})</div>
+    </div>
+
+    <div class="footer-note">
+        This is a system generated payslip and does not require signature.<br/>
+         {{releaseStatus}} </div>
+
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payslip</title>
+  <style>
+    /* Base */
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      margin: 24px;           /* reduced from 30px */
+      color: #333;
+    }
+
+    /* Header: tighter spacing and proper alignment */
+    .header-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;    /* reduced spacing */
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;   /* reduced spacing */
+      gap: 16px;
+    }
+    .logo-container {
+      flex: 0 0 140px;        /* slightly narrower */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .company-logo {
+      max-width: 140px;       /* reduced width cap */
+      max-height: 56px;       /* reduced height cap */
+      width: auto;
+      height: auto;
+      display: block;
+    }
+    .company-info {
+      flex: 1;
+      text-align: center;
+    }
+    .company-name {
+      font-size: 16px;        /* reduced from 18px */
+      font-weight: bold;
+      margin-bottom: 2px;     /* tighter */
+      line-height: 1.2;
+    }
+    .company-address {
+      font-size: 9.5px;       /* slightly smaller */
+      color: #555;
+      line-height: 1.35;
+    }
+    .payslip-title {
+      font-size: 12px;        /* reduced from 14px */
+      font-weight: bold;
+      margin-top: 6px;        /* tighter */
+      text-align: center;
+    }
+
+    /* Employee details */
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 22px;
+      margin-bottom: 16px;
+      font-size: 10.5px;
+    }
+    .details-grid div { padding-bottom: 2px; }
+    .details-grid span {
+      font-weight: bold;
+      color: #555;
+      display: inline-block;
+      min-width: 90px;
+      margin-right: 5px;
+    }
+
+    /* Earnings vs Deductions layout with baseline-aligned totals */
+    .earnings-deductions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 24px;       /* a bit tighter */
+      margin-bottom: 16px;
+    }
+    .col {
+      display: grid;
+      grid-template-rows: auto 1fr auto; /* header/body grow, total fixed at bottom */
+      row-gap: 0;
+      min-height: 1px;        /* ensure grid works in PDF layout */
+    }
+    .total-wrap {
+      align-self: end;
+      margin-top: 6px;
+    }
+
+    /* Tables */
+    .money-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10.5px;
+    }
+    .money-table th {
+      text-align: left;
+      padding: 5px 8px;
+      font-weight: bold;
+      background-color: #f4f4f4;
+      border-bottom: 1px solid #ccc;
+      text-transform: uppercase;
+      font-size: 9.5px;
+    }
+    .money-table th.amount-header { text-align: right; }
+    .money-table td {
+      text-align: left;
+      padding: 5px 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .money-table td.amount {
+      text-align: right;
+      font-family: monospace;
+    }
+    .money-table .total-row td {
+      font-weight: bold;
+      border-top: 1px solid #aaa;
+      border-bottom: none;
+      padding-top: 6px;
+    }
+
+    /* Net pay */
+    .net-pay-section {
+      margin-top: 18px;       /* slightly tighter */
+      padding-top: 12px;
+      border-top: 1px solid #aaa;
+      text-align: center;
+    }
+    .net-pay-label {
+      font-size: 11.5px;
+      font-weight: bold;
+      color: #555;
+    }
+    .net-pay-amount {
+      font-size: 17px;
+      font-weight: bold;
+      color: #333;
+      margin-top: 4px;
+      font-family: monospace;
+    }
+    .amount-in-words {
+      font-size: 9.5px;
+      margin-top: 4px;
+      color: #666;
+      font-style: italic;
+    }
+
+    /* Footer */
+    .footer-note {
+      font-size: 9px;
+      color: #888;
+      text-align: center;
+      margin-top: 24px;       /* reduced */
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header-container">
+    <div class="logo-container">
+      {{{companyLogoHtml}}}
+    </div>
+    <div class="company-info">
+      <div class="company-name">{{companyName}}</div>
+      <div class="company-address">{{companyAddress}}</div>
+      <div class="payslip-title">Payslip for {{monthYear}}</div>
+    </div>
+  </div>
+
+  <!-- Employee details -->
+  <div class="details-grid">
+    <div><span>Employee Name:</span> {{employeeName}}</div>
+    <div><span>Employee No:</span> {{employeeId}}</div>
+    <div><span>Designation:</span> {{designation}}</div>
+    <div><span>PAN Number:</span> {{panNumber}}</div>
+    <div><span>Department:</span> {{department}}</div>
+    <div><span>Bank Account No:</span> {{bankAccountNo}}</div>
+  </div>
+
+  <!-- Earnings and Deductions with bottom-aligned totals -->
+  <div class="earnings-deductions-grid">
+    <!-- Earnings column -->
+    <div class="col">
+      <table class="money-table">
+        <thead>
+          <tr>
+            <th>Earnings</th>
+            <th class="amount-header">Amount (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>BASIC</td><td class="amount">{{basic}}</td></tr>
+          <tr><td>HRA</td><td class="amount">{{hra}}</td></tr>
+          <tr><td>MEDICAL ALLOWANCE</td><td class="amount">{{medicalAllowance}}</td></tr>
+          <tr><td>SPECIAL ALLOWANCE</td><td class="amount">{{specialAllowance}}</td></tr>
+        </tbody>
+      </table>
+
+      <div class="total-wrap">
+        <table class="money-table">
+          <tbody>
+            <tr class="total-row"><td>Total Earnings</td><td class="amount">{{totalEarnings}}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Deductions column -->
+    <div class="col">
+      <table class="money-table">
+        <thead>
+          <tr>
+            <th>Deductions</th>
+            <th class="amount-header">Amount (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>PROF TAX</td><td class="amount">{{professionalTax}}</td></tr>
+        </tbody>
+      </table>
+
+      <div class="total-wrap">
+        <table class="money-table">
+          <tbody>
+            <tr class="total-row"><td>Total Deductions</td><td class="amount">{{totalDeductions}}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Net Pay -->
+  <div class="net-pay-section">
+    <div class="net-pay-label">Net Pay for the Month</div>
+    <div class="net-pay-amount">{{netPay}}</div>
+    <div class="amount-in-words">(Rupees {{netPayInWords}})</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-note">
+    This is a system generated payslip and does not require signature.<br/>
+    {{releaseStatus}}
+  </div>
 </body>
 </html>

@@ -7,6 +7,8 @@ import path from 'path';
 import puppeteer from 'puppeteer';
 import pkg from 'number-to-words';
  const { toWords } = pkg;
+ import moment from 'moment-timezone';
+import * as XLSX from 'xlsx';
 
 
 
@@ -42,14 +44,12 @@ const downloadPayslip = async (req, res) => {
         const templatePath = path.resolve(process.cwd(), 'templates', 'payslipTemplate.html');
         let htmlContent = await fs.readFile(templatePath, 'utf-8');
 
-        // 2. Prepare Data for Template
-        // TODO: Get Company Details from config/DB
         const companyDetails = {
-            companyName: "Your Company Name",
-            companyAddress: "Your Company Address",
-            // You might want to load the logo as a base64 string or use a public URL
-            companyLogoHtml: '<img src="YOUR_LOGO_URL_OR_BASE64" alt="Company Logo" class="company-logo">', // Replace with actual logo
-        };
+  companyName: "Soul Skool",
+  companyAddress: "Flat No 301, TVH Vista Heights, Tower 6, Trichy Rd, Kallimadai, Coimbatore, Tamil Nadu 641005",
+  companyLogoHtml: '<img src="https://lms-anyonecandance.b-cdn.net/public%20data%20lobo/soulskool.png" alt="Company Logo" class="company-logo" />',
+};
+
 
         const netPayInWords = toWords(Math.floor(payslip.netPay || 0)).replace(/,/g, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) + ' Only'; // Basic conversion
 
@@ -62,7 +62,7 @@ const downloadPayslip = async (req, res) => {
             department: payslip.employeeSnapshot.department || '-',
             panNumber: payslip.employeeSnapshot.panNumber || '-',
             // Use snapshot bank details
-            bankAccountNo: payslip.employeeSnapshot.bankDetails?.accountNumber ? `****${payslip.employeeSnapshot.bankDetails.accountNumber.slice(-4)}` : '-', // Simple masking
+            bankAccountNo: payslip.employeeSnapshot.bankDetails?.accountNumber ? payslip.employeeSnapshot.bankDetails.accountNumber : '-', // Simple masking
             // Earnings
             basic: formatCurrencyForTemplate(payslip.earnings.basic),
             hra: formatCurrencyForTemplate(payslip.earnings.hra),
@@ -81,17 +81,29 @@ const downloadPayslip = async (req, res) => {
         };
 
         // 3. Replace Placeholders (Basic Replacement)
-        for (const key in templateData) {
-            // Use {{{key}}} for HTML injection like logo
-            if (key === 'companyLogoHtml') {
-                 htmlContent = htmlContent.replace(`{{{${key}}}}`, templateData[key]);
-            } else {
-                 // Use {{key}} for text replacement
-                const regex = new RegExp(`{{${key}}}`, 'g');
-                htmlContent = htmlContent.replace(regex, templateData[key]);
-            }
+        // for (const key in templateData) {
+        //     // Use {{{key}}} for HTML injection like logo
+        //     if (key === 'companyLogoHtml') {
+        //          htmlContent = htmlContent.replace(`{{{${key}}}}`, templateData[key]);
+        //     } else {
+        //          // Use {{key}} for text replacement
+        //         const regex = new RegExp(`{{${key}}}`, 'g');
+        //         htmlContent = htmlContent.replace(regex, templateData[key]);
+        //     }
 
-        }
+        // }
+
+
+
+        htmlContent = htmlContent.replace(/\{\{\{\s*companyLogoHtml\s*\}\}\}/g, companyDetails.companyLogoHtml);
+
+// 2) Replace the simple text placeholders
+for (const [key, val] of Object.entries(templateData)) {
+  if (key === 'companyLogoHtml') continue;
+  const safeVal = String(val ?? '');
+  const re = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
+  htmlContent = htmlContent.replace(re, safeVal);
+}
 
         // 4. Launch Puppeteer and Generate PDF
         const browser = await puppeteer.launch({
@@ -353,6 +365,185 @@ const deletePayslip = async (req, res) => {
         res.status(500).json({ message: 'Server error deleting payslip.' });
     }
 };
+
+
+
+
+
+
+
+const tz = 'Asia/Kolkata';
+const ist = (d) => moment(d).tz(tz);
+
+const getMonthBoundsIST = (year, month1to12) => {
+  const m0 = month1to12 - 1;
+  const start = moment.tz({ year, month: m0, day: 1, hour: 0, minute: 0, second: 0, millisecond: 0 }, tz);
+  const end = start.clone().endOf('month');
+  return { start: start.toDate(), end: end.toDate() };
+};
+
+// Choose which field drives the month filtering.
+// If your schema has numeric month/year on payslip, prefer that for direct match:
+//    query = { month, year }
+// Otherwise, fallback to a timestamp field range (generatedAt or releasedAt).
+const buildMonthQuery = (year, month, useNumericMonthYear, dateFieldForRange = 'generatedAt') => {
+  if (useNumericMonthYear) {
+    return { month, year };
+  }
+  const { start, end } = getMonthBoundsIST(year, month);
+  return { [dateFieldForRange]: { $gte: start, $lte: end } };
+};
+
+// GET /api/admin/payslips/statement?year=2025&month=10
+export const getMonthlyPayslipStatement = async (req, res) => {
+  try {
+    const rawYear = req.query.year;
+const rawMonth = req.query.month;
+const year = Number(rawYear);
+const month = Number(rawMonth);
+if (!Number.isFinite(year) || !Number.isInteger(year)) {
+  return res.status(400).json({ message: 'Invalid year.' });
+}
+if (!Number.isFinite(month) || !Number.isInteger(month) || month < 1 || month > 12) {
+  return res.status(400).json({ message: 'Invalid month (1-12).' });
+}
+
+    // Toggle this based on your Payslip schema:
+    const USE_NUMERIC_MONTH_YEAR = true; // set true if Payslip has month (1-12) and year (YYYY)
+    const query = buildMonthQuery(year, month, USE_NUMERIC_MONTH_YEAR, 'generatedAt');
+
+    // Pull payslips; using employeeSnapshot for stable reporting (no populate needed).
+    const slips = await Payslip.find(query)
+      .select('employeeSnapshot month year earnings deductions netPay isReleased generatedAt releasedAt employeeIdString')
+      .lean();
+
+    // Normalize rows for UI
+    const rows = slips.map(p => ({
+      employeeId: p.employeeSnapshot?.employeeId ?? p.employeeIdString ?? '-',
+      employeeName: p.employeeSnapshot?.name ?? '-',
+      designation: p.employeeSnapshot?.designation ?? '-',
+      department: p.employeeSnapshot?.department ?? '-',
+      month: p.month,
+      year: p.year,
+      totalEarnings: p.earnings?.total ?? 0,
+      totalDeductions: p.deductions?.total ?? 0,
+      netPay: p.netPay ?? 0,
+      released: !!p.isReleased,
+      generatedAt: p.generatedAt ? ist(p.generatedAt).format('YYYY-MM-DD HH:mm') : '',
+      releasedAt: p.releasedAt ? ist(p.releasedAt).format('YYYY-MM-DD HH:mm') : '',
+      payslipId: String(p._id),
+    }));
+
+    return res.json({
+      year,
+      month,
+      count: rows.length,
+      payslips: rows,
+    });
+  } catch (err) {
+    console.error('Salary statement fetch failed:', err);
+    return res.status(500).json({ message: 'Failed to fetch salary statement.' });
+  }
+};
+
+// GET /api/admin/payslips/statement/export?year=2025&month=10
+export const exportMonthlyPayslipStatement = async (req, res) => {
+  try {
+    const year = parseInt(req.query.year, 10);
+    const month = parseInt(req.query.month, 10); // 1..12
+    if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+      return res.status(400).json({ message: 'Provide valid year and month (1-12).' });
+    }
+
+    const USE_NUMERIC_MONTH_YEAR = true; // set true if your Payslip has month/year numeric fields
+    const query = buildMonthQuery(year, month, USE_NUMERIC_MONTH_YEAR, 'generatedAt');
+
+    const slips = await Payslip.find(query)
+      .select('employeeSnapshot month year earnings deductions netPay isReleased generatedAt releasedAt employeeIdString')
+      .lean();
+
+    const header = [
+      'Employee ID',
+      'Employee Name',
+      'Designation',
+      'Department',
+      'Month',
+      'Year',
+      'Total Earnings',
+      'Total Deductions',
+      'Net Pay',
+      'Released',
+      'Generated At',
+      'Released At',
+      'Payslip ID',
+    ];
+
+    const rows = slips.map(p => {
+      const empId = p.employeeSnapshot?.employeeId ?? p.employeeIdString ?? '';
+      const name = p.employeeSnapshot?.name ?? '';
+      const desig = p.employeeSnapshot?.designation ?? '';
+      const dept = p.employeeSnapshot?.department ?? '';
+      const gen = p.generatedAt ? ist(p.generatedAt).format('YYYY-MM-DD HH:mm') : '';
+      const rel = p.releasedAt ? ist(p.releasedAt).format('YYYY-MM-DD HH:mm') : '';
+      return [
+        empId,
+        name,
+        desig,
+        dept,
+        p.month,
+        p.year,
+        p.earnings?.total ?? 0,
+        p.deductions?.total ?? 0,
+        p.netPay ?? 0,
+        p.isReleased ? 'Yes' : 'No',
+        gen,
+        rel,
+        String(p._id),
+      ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    ws['!cols'] = [
+      { wch: 14 }, // Employee ID
+      { wch: 24 }, // Employee Name
+      { wch: 18 }, // Designation
+      { wch: 18 }, // Department
+      { wch: 8 },  // Month
+      { wch: 8 },  // Year
+      { wch: 16 }, // Total Earnings
+      { wch: 16 }, // Total Deductions
+      { wch: 14 }, // Net Pay
+      { wch: 10 }, // Released
+      { wch: 20 }, // Generated At
+      { wch: 20 }, // Released At
+      { wch: 24 }, // Payslip ID
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const sheetName = `Payslips_${year}-${String(month).padStart(2, '0')}`;
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+    const filename = `${sheetName}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+    return res.send(wbout);
+  } catch (err) {
+    console.error('Salary statement export failed:', err);
+    return res.status(500).json({ message: 'Failed to export salary statement.' });
+  }
+};
+
+
+
+
+
+
+
+
+
+
 
 export {
     generatePayslip,
